@@ -33,6 +33,7 @@ char aioperf_data_512bytes[] = "<<testdata\
 #define AIOPERF_WRITE_FOLDER        "./test_data/test_write/"
 #define AIOPERF_MBYTE_SIZE          (1024 * 1024)
 #define AIOPERF_CONF_PATH           "./aioperf.conf"
+#define AIOPERF_QUEUE_SIZE          (1000 * 1000)
 
 enum {
     PROCESS_ALARM,
@@ -48,7 +49,7 @@ enum {
 enum {
     USE_LIBAIO = 100,
     USE_LIBEIO,
-    USE_XAIO,
+    USE_XIO,
     USE_AIO,
     USE_IO
 };

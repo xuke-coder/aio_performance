@@ -21,7 +21,7 @@ aioperf_general_init(aioperf_manager_t *mgr)
                 return AIOPERF_ERROR;
             }
             break;
-        case USE_XAIO:
+        case USE_XIO:
             if (aioperf_xio_mgr_init(mgr) != AIOPERF_OK) {
                 printf("xio init error\n");
                 return AIOPERF_ERROR;
@@ -58,7 +58,7 @@ aioperf_general_release(aioperf_manager_t *mgr)
         case USE_AIO:
             aioperf_aio_release(mgr);
             break;
-        case USE_XAIO:
+        case USE_XIO:
             aioperf_xio_mgr_release(mgr);    
             break;
         case USE_LIBAIO:
@@ -83,11 +83,7 @@ aioperf_general_repository_init(aioperf_manager_t *mgr)
     switch (aio_type) {
         case USE_AIO:
             break;
-        case USE_XAIO:
-            if (aioperf_xio_notifier_init(mgr) != AIOPERF_OK) {
-                printf("notifier init error\n");
-                return AIOPERF_ERROR;
-            }
+        case USE_XIO:
             break;
         case USE_LIBAIO:
             break;
@@ -110,8 +106,7 @@ aioperf_general_repository_release(aioperf_manager_t *mgr)
     switch (aio_type) {
         case USE_AIO:
             break;
-        case USE_XAIO:
-            aioperf_xio_notifier_release(mgr);    
+        case USE_XIO:
             break;
         case USE_LIBAIO:
             break;
@@ -137,7 +132,7 @@ aioperf_general_read(aioperf_io_task_t *io_task)
                 return AIOPERF_ERROR;
             }
             break;
-        case USE_XAIO:
+        case USE_XIO:
             if (aioperf_xio_read(io_task) != AIOPERF_OK) {
                 printf("xio read error\n");
                 return AIOPERF_ERROR;
@@ -181,7 +176,7 @@ aioperf_general_write(aioperf_io_task_t *io_task)
                 return AIOPERF_ERROR;
             }
             break;
-        case USE_XAIO:
+        case USE_XIO:
             if (aioperf_xio_write(io_task) != AIOPERF_OK) {
                 printf("xio write error\n");
                 return AIOPERF_ERROR;
@@ -223,7 +218,7 @@ aioperf_general_mgr_signal_create(aioperf_manager_t *mgr)
     switch (aio_type) {
         case USE_AIO:
             break;
-        case USE_XAIO:
+        case USE_XIO:
             break;
         case USE_LIBAIO:
             break;
@@ -252,7 +247,7 @@ aioperf_general_mgr_signal_release(aioperf_manager_t *mgr)
     switch (aio_type) {
         case USE_AIO:
             break;
-        case USE_XAIO:
+        case USE_XIO:
             break;
         case USE_LIBAIO:
             break;
@@ -276,7 +271,7 @@ aioperf_general_mgr_event_add(struct epoll_event *event,
         case USE_AIO:
             break;
             
-        case USE_XAIO:
+        case USE_XIO:
             break;
             
         case USE_LIBAIO:
@@ -313,7 +308,7 @@ aioperf_general_mgr_event_handler(struct epoll_event *event,
         case USE_AIO:
             break;
             
-        case USE_XAIO:
+        case USE_XIO:
             break;
             
         case USE_LIBAIO:
@@ -348,8 +343,14 @@ aioperf_general_repository_signal_create(aioperf_repository_t *repository)
                 return AIOPERF_ERROR;
             }
             break;
-        case USE_XAIO:
+            
+        case USE_XIO:
+            if (aioperf_eventfd_create(&repository->signal_fd) != AIOPERF_OK) {
+                printf("aio signal create error\n");
+                return AIOPERF_ERROR;
+            }
             break;
+            
         case USE_LIBAIO:
             if (aioperf_eventfd_create(&repository->signal_fd) != AIOPERF_OK) {
                 printf("libaio signal1 create error\n");
@@ -391,7 +392,8 @@ aioperf_general_repository_signal_release(aioperf_repository_t *repository)
         case USE_AIO:
             aioperf_eventfd_release(repository->signal_fd);
             break;
-        case USE_XAIO:
+        case USE_XIO:
+            aioperf_eventfd_release(repository->signal_fd);
             break;
         case USE_LIBAIO:
             aioperf_eventfd_release(repository->signal_fd);
@@ -424,7 +426,14 @@ aioperf_general_repository_event_add(struct epoll_event *event,
             }
             break;
             
-        case USE_XAIO:
+        case USE_XIO:
+            event->data.fd = repository->signal_fd;
+            event->events = EPOLLIN | EPOLLET;
+            if (epoll_ctl(worker->epoll_fd, EPOLL_CTL_ADD, 
+                repository->signal_fd, event) != 0) {
+                printf("epoll ctl signal fd error\n");
+                return AIOPERF_ERROR;
+            }
             break;
             
         case USE_LIBAIO:
@@ -484,7 +493,11 @@ aioperf_general_repository_event_handler(struct epoll_event *event,
                 return AIOPERF_OK;
             }
             break;
-        case USE_XAIO:
+        case USE_XIO:
+            if (event->data.fd == repository->signal_fd) {
+                aioperf_xio_handler(repository);
+                return AIOPERF_OK;
+            }
             break;
             
         case USE_LIBAIO:

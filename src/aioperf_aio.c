@@ -22,7 +22,7 @@ aioperf_aio_init(aioperf_manager_t *mgr)
     aioperf_memory_set(aio_mgr, 0, sizeof(struct aioinit));
     
     aio_mgr->aio_threads = mgr->io_thread_num;
-    aio_mgr->aio_num = 1000000;
+    aio_mgr->aio_num = AIOPERF_QUEUE_SIZE;
     aio_mgr->aio_idle_time = 5;
     
     mgr->data = aio_mgr;

@@ -279,9 +279,9 @@ aioperf_manager_repository_release(aioperf_manager_t *mgr)
 int
 aioperf_manager_get_aio_type(const char *type)
 {
-    if (strcmp(type, "-f") == 0) {
-        aio_type = USE_XAIO;
-        printf("\n*************************FAIO TEST START****************\n");
+    if (strcmp(type, "-x") == 0) {
+        aio_type = USE_XIO;
+        printf("\n*************************XIO TEST START****************\n");
         return AIOPERF_OK;
     } else if (strcmp(type, "-a") == 0) {
         aio_type = USE_AIO;
